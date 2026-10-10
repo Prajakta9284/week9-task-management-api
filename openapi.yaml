@@ -1,0 +1,320 @@
+
+openapi: 3.0.3
+
+info:
+  title: Task Management REST API
+  version: 1.0.0
+  description: >
+    REST API for user registration, authentication, password recovery,
+    and task management. Protected endpoints require a JWT access token.
+
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Registration, login, tokens, and password recovery
+  - name: Tasks
+    description: Create, view, update, and delete tasks
+
+paths:
+  /:
+    get:
+      summary: Check API status
+      responses:
+        "200":
+          description: API is running
+
+  /api/auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              username: testuser
+              email: test@example.com
+              password: Test@123
+      responses:
+        "201":
+          description: User registered successfully
+        "400":
+          description: Required fields are missing
+        "409":
+          description: Username or email already exists
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in and obtain JWT tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: test@example.com
+              password: Test@123
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Required credentials are missing
+        "401":
+          description: Invalid email or password
+
+  /api/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Generate a new access token
+      security:
+        - RefreshToken: []
+      responses:
+        "200":
+          description: New access token generated
+        "401":
+          description: Missing, invalid, or expired refresh token
+
+  /api/auth/profile:
+    get:
+      tags: [Authentication]
+      summary: Get the current user's profile
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile returned
+        "401":
+          description: Access token is missing or invalid
+        "404":
+          description: User not found
+
+  /api/auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Request a password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Password reset request processed
+        "400":
+          description: Email is required
+
+  /api/auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset a password using a reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reset_token, new_password]
+              properties:
+                reset_token:
+                  type: string
+                new_password:
+                  type: string
+                  minLength: 6
+            example:
+              reset_token: your_password_reset_token
+              new_password: NewPass@123
+      responses:
+        "200":
+          description: Password reset successfully
+        "400":
+          description: Required fields are missing or invalid
+        "401":
+          description: Reset token is invalid or expired
+        "404":
+          description: User not found
+
+  /api/tasks:
+    get:
+      tags: [Tasks]
+      summary: Get the current user's tasks
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Tasks returned successfully
+        "401":
+          description: Access token is missing or invalid
+
+    post:
+      tags: [Tasks]
+      summary: Create a task
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+            example:
+              title: Complete Flask API
+              description: Test task creation
+              status: pending
+              priority: high
+      responses:
+        "201":
+          description: Task created successfully
+        "400":
+          description: Invalid or missing input
+        "401":
+          description: Access token is missing or invalid
+
+  /api/tasks/{task_id}:
+    parameters:
+      - name: task_id
+        in: path
+        required: true
+        description: Numeric task ID
+        schema:
+          type: integer
+          example: 3
+
+    get:
+      tags: [Tasks]
+      summary: Get a task by ID
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Task returned successfully
+        "401":
+          description: Access token is missing or invalid
+        "404":
+          description: Task not found
+
+    put:
+      tags: [Tasks]
+      summary: Update a task
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+            example:
+              title: Updated Flask API
+              description: Updated task description
+              status: in_progress
+              priority: high
+      responses:
+        "200":
+          description: Task updated successfully
+        "400":
+          description: Invalid or missing input
+        "401":
+          description: Access token is missing or invalid
+        "404":
+          description: Task not found
+
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Task deleted successfully
+        "401":
+          description: Access token is missing or invalid
+        "404":
+          description: Task not found
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use your login response's access_token.
+
+    RefreshToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Use your login response's refresh_token.
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, in_progress, completed]
+          default: pending
+        priority:
+          type: string
+          enum: [low, medium, high]
+          default: medium
+        due_date:
+          type: string
+          format: date
+          nullable: true

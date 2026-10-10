@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tasks/{{taskId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{accessToken}}
+body:
+  type: text
+  content: |-
+    {
+      "title": "Updated Flask API",
+      "description": "Updated task description",
+      "status": "in_progress",
+      "priority": "high"
+    }
+order: 4000

@@ -1,0 +1,13 @@
+# Use this workspace to collaborate
+workspace:
+  id: a54464ae-74ae-4dd4-805a-1fe6fd0e9740
+
+localResources:
+  collections:
+    - ../Task_Management_API.postman_collection.json
+  specs:
+    - ../openapi.yaml
+
+cloudResources:
+  collections:
+    ../postman/collections/Task Management REST API: a1c64ced-29b9-4cf0-b0c2-3c8ca4f34d76

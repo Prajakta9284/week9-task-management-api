@@ -1,0 +1,7 @@
+$kind: collection
+description: Postman collection for the Week 9 Flask API project.
+variables:
+  baseUrl: http://127.0.0.1:5000
+  accessToken: ""
+  refreshToken: ""
+  taskId: "3"
